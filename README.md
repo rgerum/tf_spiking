@@ -1,1 +1,1 @@
-# tf_spiking
+# Tensorflow Spiking Layer
