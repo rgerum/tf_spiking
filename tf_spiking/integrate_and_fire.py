@@ -98,24 +98,6 @@ class SumEnd(Layer):
         return x[:, 0, :]
 
 
-class IntensityToPoissonSpiking(Layer):
-    def __init__(self, N, factor=1.0, **kwargs):
-        super().__init__(**kwargs)
-        self.N = N
-        self.factor = factor
-
-    def build(self, input_shape):
-        super().build(input_shape)  # Be sure to call this at the end
-
-    def get_config(self):
-        return {"N": self.N, "factor": self.factor}
-
-    def call(self, x):
-        x = tf.cast(x[:, None, :], tf.float32)*self.factor
-        y = tf.tile(x, (1, self.N, 1))
-        return tf.random.uniform(shape=tf.shape(y), dtype=x.dtype) < x
-
-
 class DenseLIF(Sequential):
     def __init__(self, units, surrogate="flat", beta=10):
         super().__init__([
