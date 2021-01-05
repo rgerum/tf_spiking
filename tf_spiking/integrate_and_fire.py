@@ -2,27 +2,10 @@ import numpy as np
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Layer, TimeDistributed, Dense
 from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras import initializers
+
 import tensorflow as tf
 from .surrogates import get, theta_forget
-
-
-# define the lif
-@tf.function
-def lif_gradient(x, w_i, w_l, t_refrectory=1, V_thresh=1):
-    time_steps = x.shape[1]
-
-    Vm = w_i * x[:, 0] * 0
-    R = w_i * x[:, 0] * 0
-    states = tf.TensorArray(tf.float32, size=time_steps)
-
-    for i in tf.range(time_steps):
-        R = theta_forget(Vm - V_thresh) * t_refrectory + theta_forget(R - 1) * (R - 1)
-        Vm = (w_i * x[:, i] + (1 - w_l) * Vm) * theta_forget(-R)
-        spike = theta_SuperSpike(Vm - V_thresh)
-        states = states.write(i, spike)
-
-    return tf.transpose(states.stack(), (1, 0, 2))
-
 
 
 # define the lif
@@ -41,10 +24,26 @@ def lif_gradient(x, w_i, w_l, theta_one, t_thresh=1):
     return tf.transpose(states.stack(), (1, 0, 2))
 
 
+# define the lif
+@tf.function
+def lif_gradient_membrane_potential(x, w_i, w_l, theta_one, t_thresh=1):
+    time_steps = x.shape[1]
+
+    Vm = w_i * x[:, 0] * 0
+    states = tf.TensorArray(tf.float32, size=time_steps)
+
+    for i in tf.range(time_steps):
+        Vm = tf.nn.relu(w_i * x[:, i] + (1 - w_l) * Vm * theta_forget(t_thresh - Vm))
+        spike = theta_one(Vm - t_thresh)
+        states = states.write(i, Vm)
+
+    return tf.transpose(states.stack(), (1, 0, 2))
+
+
 
 class LIF_Activation(Layer):
 
-    def __init__(self, w_input=1, w_leak=0.1, t_thresh=1, surrogate="flat", beta=10, **kwargs):
+    def __init__(self, w_input=1, w_leak=0.1, t_thresh=1, surrogate="flat", beta=10, return_potential=False, **kwargs):
         super().__init__(**kwargs)
         self.w_input_start = np.asarray(w_input)
         self.w_leak_start = np.asarray(w_leak)
@@ -53,6 +52,7 @@ class LIF_Activation(Layer):
         self.theta = get(surrogate, beta)
         self.beta = beta
         self.surrogate = surrogate
+        self.return_potential = return_potential
 
     def build(self, input_shape):
         self.w_input = self.add_weight(
@@ -77,7 +77,10 @@ class LIF_Activation(Layer):
         pre_channels = x.shape[2]
 
         # integrate (batch, time_steps, pre_channels)
-        y = lif_gradient(x, self.w_input, self.w_leak, theta_one=self.theta, t_thresh=self.thresh)
+        if self.return_potential:
+            y = lif_gradient_membrane_potential(x, self.w_input, self.w_leak, theta_one=self.theta, t_thresh=self.thresh)
+        else:
+            y = lif_gradient(x, self.w_input, self.w_leak, theta_one=self.theta, t_thresh=self.thresh)
         # reshape to (batch, time_steps, channels)
         y = tf.reshape(y, (-1, time_steps, pre_channels))
         return y
