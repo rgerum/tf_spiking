@@ -43,10 +43,12 @@ def lif_gradient_membrane_potential(x, w_i, w_l, theta_one, t_thresh=1):
 
 class LIF_Activation(Layer):
 
-    def __init__(self, w_input=1, w_leak=0.1, t_thresh=1, surrogate="flat", beta=10, return_potential=False, **kwargs):
+    def __init__(self, units=1, t_thresh=1, surrogate="flat", beta=10, return_potential=False,
+                 input_initializer='random_uniform',
+                 leak_initializer='random_uniform',
+                 **kwargs):
         super().__init__(**kwargs)
-        self.w_input_start = np.asarray(w_input)
-        self.w_leak_start = np.asarray(w_leak)
+        self.units = units
         self.thresh = t_thresh
 
         self.theta = get(surrogate, beta)
@@ -54,24 +56,39 @@ class LIF_Activation(Layer):
         self.surrogate = surrogate
         self.return_potential = return_potential
 
+        if leak_initializer == "random_uniform":
+            self.leak_initializer = tf.keras.initializers.RandomUniform(0, self.w_leak_start)
+        elif leak_initializer == "constant":
+            self.leak_initializer = tf.keras.initializers.Constant(self.w_leak_start)
+        else:
+            self.leak_initializer = initializers.get(leak_initializer)
+
+        self.input_initializer = initializers.get(input_initializer)
+
     def build(self, input_shape):
         self.w_input = self.add_weight(
             name='w_input',
-            shape=self.w_input_start.shape,
-            initializer=tf.keras.initializers.Constant(self.w_input_start),
-            trainable=True)
+            shape=[self.units],
+            initializer=self.input_initializer,
+            trainable=False)
 
         self.w_leak = self.add_weight(
             name='w_leak',
-            shape=self.w_leak_start.shape,
-            initializer=tf.keras.initializers.RandomUniform(0, self.w_leak_start),
+            shape=[self.units],
+            initializer=self.leak_initializer,
             trainable=True)
 
-        #self.set_weights([self.w_input_start, self.w_leak_start])
         super().build(input_shape)  # Be sure to call this at the end
 
     def get_config(self):
-        return {"w_input": self.w_input_start, "w_leak": self.w_leak_start, "t_thresh": self.thresh, "beta": self.beta, "surrogate": self.surrogate}
+        return {
+            "units": self.units,
+            "leak_initializer": tf.keras.initializers.serialize(self.leak_initializer),
+            "input_initializer": tf.keras.initializers.serialize(self.input_initializer),
+            "t_thresh": self.thresh,
+            "surrogate": self.surrogate,
+            "beta": self.beta,
+        }
 
     def call(self, x):
         time_steps = x.shape[1]
@@ -107,13 +124,20 @@ class DenseLIF(Sequential):
     def __init__(self, units, dt=1, surrogate="flat", beta=10, return_potential=False):
         super().__init__([
             TimeDistributed(Dense(units)),
-            LIF_Activation(w_input=dt, w_leak=np.ones(units)*0.1*dt, surrogate=surrogate, beta=beta, return_potential=return_potential),
+            LIF_Activation(
+                units=units,
+                input_initializer=tf.keras.initializers.Constant(1*dt),
+                leak_initializer=tf.keras.initializers.RandomUniform(0, 0.1*dt),
+                surrogate=surrogate, beta=beta, return_potential=return_potential),
         ])
 
 class DenseLIFCategory(Sequential):
-    def __init__(self, units, surrogate="flat", beta=10):
+    def __init__(self, units, dt=1, surrogate="flat", beta=10):
         super().__init__([
             TimeDistributed(Dense(units)),
-            LIF_Activation(w_leak=0.1, surrogate=surrogate, beta=beta),
+            LIF_Activation(
+                input_initializer=tf.keras.initializers.Constant(1 * dt),
+                leak_initializer=tf.keras.initializers.Constant(0.1 * dt),
+                surrogate=surrogate, beta=beta),
             SumEnd(),
         ])
