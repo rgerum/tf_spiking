@@ -1,5 +1,4 @@
 from tensorflow.keras.layers import Dropout, MaxPool1D, MaxPool2D, Conv1D, Conv2D, Dense
-from auditory_pathway import LIFLayer, BandpassLayer, HearingLossLayer, NoiseLayer, Cortex, MultiplyFactorLayer
 from tensorflow.keras.models import load_model
 from pathlib import Path
 
@@ -40,3 +39,22 @@ def printModelInfo(model):
             extra = f"poolsize: {layer.pool_size}"
         i += 1
         print(i, getName(layer), writeShape(layer.input.shape) + "; " + writeShape(layer.output.shape), active, extra, sep=" & ", end="\\\\\n")
+
+
+from pathlib import Path
+import numpy as np
+import tensorflow.keras as keras
+
+
+class TrainingHistory(keras.callbacks.Callback):
+    def __init__(self, output):
+        output = Path(output)
+        output.mkdir(parents=True, exist_ok=True)
+        self.output = output / "data.txt"
+
+    def on_train_begin(self, logs={}):
+        self.data = []
+
+    def on_epoch_end(self, epoch, logs={}):
+        self.data.append([logs.get('loss'), logs.get('accuracy'), logs.get('val_loss'), logs.get('val_accuracy')])
+        np.savetxt(self.output, self.data)
