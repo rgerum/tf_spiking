@@ -58,14 +58,16 @@ class LIF_Activation(Layer):
         self.w_input = self.add_weight(
             name='w_input',
             shape=self.w_input_start.shape,
+            initializer=tf.keras.initializers.Constant(self.w_input_start),
             trainable=True)
 
         self.w_leak = self.add_weight(
             name='w_leak',
             shape=self.w_leak_start.shape,
+            initializer=tf.keras.initializers.RandomUniform(0, self.w_leak_start),
             trainable=True)
 
-        self.set_weights([self.w_input_start, self.w_leak_start])
+        #self.set_weights([self.w_input_start, self.w_leak_start])
         super().build(input_shape)  # Be sure to call this at the end
 
     def get_config(self):
@@ -102,10 +104,10 @@ class SumEnd(Layer):
 
 
 class DenseLIF(Sequential):
-    def __init__(self, units, surrogate="flat", beta=10):
+    def __init__(self, units, dt=1, surrogate="flat", beta=10, return_potential=False):
         super().__init__([
             TimeDistributed(Dense(units)),
-            LIF_Activation(w_leak=0.1, surrogate=surrogate, beta=beta),
+            LIF_Activation(w_input=dt, w_leak=np.ones(units)*0.1*dt, surrogate=surrogate, beta=beta, return_potential=return_potential),
         ])
 
 class DenseLIFCategory(Sequential):

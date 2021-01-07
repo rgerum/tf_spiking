@@ -18,18 +18,16 @@ for plot_index in range(3):
     ])
     print(model.summary())
     if plot_index == 1:
-        model.layers[0].layers[0].set_weights([model.weights[0].numpy() *0 + 0.3, model.weights[1].numpy()])
-        model.layers[0].layers[1].set_weights([np.ones(())*1, model.weights[1].numpy()*0.1])
-        model.layers[0].layers[0].set_weights([model.weights[0].numpy() *0 + 0.15, model.weights[1].numpy()])
-        model.layers[0].layers[1].set_weights([np.ones(())*1, model.weights[1].numpy()*0.02])
+        model.layers[0].layers[0].set_weights([model.weights[0].numpy() * 0 + 0.14, model.weights[1].numpy()])
+        model.layers[0].layers[1].set_weights([np.ones(()), model.weights[3].numpy()*0+0.02])
 
     if plot_index == 0:
         model.layers[0].layers[0].set_weights([model.weights[0].numpy() *0 + 0.099, model.weights[1].numpy()])
-        model.layers[0].layers[1].set_weights([np.ones(()), model.weights[1].numpy()*0.0])
+        model.layers[0].layers[1].set_weights([np.ones(()), model.weights[3].numpy()*0.0])
 
     if plot_index == 2:
         model.layers[0].layers[0].set_weights([model.weights[0].numpy() *0 + 0.5, model.weights[1].numpy()])
-        model.layers[0].layers[1].set_weights([np.ones(()), model.weights[1].numpy()*0.2])
+        model.layers[0].layers[1].set_weights([np.ones(()), model.weights[3].numpy()*0+0.3])
 
     model2 = models.Sequential([
         layers.Input((211, 211)),
@@ -112,7 +110,8 @@ for plot_index in range(3):
         for i in indices:
             print(i, spikes[i], width)
             print([i-width, i+width], [0, 0], [spikes[i], spikes[i]], c)
-            plt.fill_between([i-width, i+width], [0, 0], [spikes[i], spikes[i]], edgecolor=c, facecolor=c, zorder=2)
+            #plt.fill_between([i-width, i+width], [0, 0], [spikes[i], spikes[i]], edgecolor=c, facecolor=c, zorder=2)
+            plt.plot([i, i], [0, spikes[i]], color=c, zorder=2)
         if color is not None:
             color_index = (color_index + 1) % len(colors)
     r = 5
@@ -147,6 +146,7 @@ for plot_index in range(3):
 pylustrator.helper_functions.axes_to_grid()
 #pylustrator.helper_functions.add_letters()
 #plt.tight_layout()
+#plt.show()
 
 #% start: automatic generated code from pylustrator
 plt.figure(1).ax_dict = {ax.get_label(): ax for ax in plt.figure(1).axes}
