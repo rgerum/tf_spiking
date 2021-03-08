@@ -35,18 +35,38 @@ class IntensityToSpikeLatency(Layer):
 
 
 class IntensityToPoissonSpiking(Layer):
-    def __init__(self, N, factor=1.0, **kwargs):
+    def __init__(self, N, factor=1.0, dt=1, **kwargs):
         super().__init__(**kwargs)
         self.N = N
         self.factor = factor
+        self.dt = dt
 
     def build(self, input_shape):
         super().build(input_shape)  # Be sure to call this at the end
 
     def get_config(self):
-        return {"N": self.N, "factor": self.factor}
+        return {"N": self.N, "factor": self.factor, "dt": self.dt}
 
     def call(self, x):
-        x = tf.cast(x[:, None, :], tf.float32)*self.factor
+        x = tf.cast(x[:, None, :], tf.float32)*self.factor*self.dt
         y = tf.tile(x, (1, self.N, 1))
-        return tf.random.uniform(shape=tf.shape(y), dtype=x.dtype) < x
+        return tf.random.uniform(minval=0, maxval=1, shape=tf.shape(y), dtype=x.dtype) < x
+
+
+class IntensityTile(Layer):
+    def __init__(self, N, factor=1.0, dt=1, **kwargs):
+        super().__init__(**kwargs)
+        self.N = N
+        self.factor = factor
+        self.dt = dt
+
+    def build(self, input_shape):
+        super().build(input_shape)  # Be sure to call this at the end
+
+    def get_config(self):
+        return {"N": self.N, "factor": self.factor, "dt": self.dt}
+
+    def call(self, x):
+        x = tf.cast(x[:, None, :], tf.float32)*self.factor*self.dt
+        y = tf.tile(x, (1, self.N, 1))
+        return y

@@ -1,5 +1,5 @@
 from .integrate_and_fire import DenseLIF, DenseLIFCategory
-from .preprocessing import IntensityToPoissonSpiking, IntensityToSpikeLatency
+from .preprocessing import IntensityToPoissonSpiking, IntensityToSpikeLatency, IntensityTile
 
 from tensorflow.keras.utils import get_custom_objects
 
@@ -8,4 +8,5 @@ get_custom_objects().update({
     "DenseLIFCategory": DenseLIFCategory,
     "IntensityToPoissonSpiking": IntensityToPoissonSpiking,
     "IntensityToSpikeLatency": IntensityToSpikeLatency,
+    "IntensityTile": IntensityTile,
 })

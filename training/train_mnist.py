@@ -1,4 +1,5 @@
 import tensorflow.keras as keras
+import tensorflow.keras as K
 from tensorflow.keras import layers, models, utils, callbacks
 
 from tf_spiking import DenseLIF, DenseLIFCategory, IntensityToPoissonSpiking
@@ -15,6 +16,8 @@ model = models.Sequential([
     DenseLIFCategory(10),
 ])
 print(model.summary())
+
+grads = K.gradient(model.output, model.input)
 
 model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
 
