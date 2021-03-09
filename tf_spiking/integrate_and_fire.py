@@ -1,5 +1,6 @@
 import numpy as np
 from tensorflow.keras import backend as K
+from tensorflow import keras
 from tensorflow.keras.layers import Layer, TimeDistributed, Dense
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras import initializers
@@ -169,10 +170,19 @@ class DenseLIF(Sequential):
                 input_initializer=tf.keras.initializers.Constant(1*dt),
                 leak_initializer=tf.keras.initializers.RandomUniform(0, 0.1*dt),
                 surrogate=surrogate, beta=beta, return_potential=return_potential),
-        ])
+        ], **kwargs)
+        self.units = units
+
+    def get_config(self):
+        return {"units": self.units, "name": self.name}
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
 
 class DenseLIFCategory(Sequential):
-    def __init__(self, units, dt=1, surrogate="flat", beta=10):
+    def __init__(self, units, dt=1, surrogate="flat", beta=10, **kwargs):
         super().__init__([
             TimeDistributed(Dense(units)),
             LIF_Activation(
@@ -180,17 +190,25 @@ class DenseLIFCategory(Sequential):
                 leak_initializer=tf.keras.initializers.Constant(0.1 * dt),
                 surrogate=surrogate, beta=beta),
             SumEnd(),
-        ])
+        ], **kwargs)
 
 class DenseLIFNoSpike(Sequential):
-    def __init__(self, units, dt=1, surrogate="flat", beta=10):
+    def __init__(self, units=10, **kwargs):
         super().__init__([
             TimeDistributed(Dense(units)),
             LIF_Activation(
-                input_initializer=tf.keras.initializers.Constant(1 * dt),
-                leak_initializer=tf.keras.initializers.Constant(0 * dt),
+                input_initializer=tf.keras.initializers.Constant(1),
+                leak_initializer=tf.keras.initializers.Constant(0),
                 no_spike=True,
             ),
             GetEnd(),
             tf.keras.layers.Softmax(),
-        ])
+        ], **kwargs)
+        self.units = units
+
+    def get_config(self):
+        return {"units": self.units, "name": self.name}
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
