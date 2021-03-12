@@ -48,8 +48,12 @@ class IntensityToPoissonSpiking(Layer):
         return {"N": self.N, "factor": self.factor, "dt": self.dt}
 
     def call(self, x):
+        # flatten input if necessary
+        x = flatten_image(x)
+        # add a dimension to tile the input and multiply by factors
         x = tf.cast(x[:, None, :], tf.float32)*self.factor*self.dt
         y = tf.tile(x, (1, self.N, 1))
+        # generate random numbers and threshold by the probability
         return tf.random.uniform(minval=0, maxval=1, shape=tf.shape(y), dtype=x.dtype) < x
 
 
@@ -67,6 +71,18 @@ class IntensityTile(Layer):
         return {"N": self.N, "factor": self.factor, "dt": self.dt}
 
     def call(self, x):
+        # flatten input if necessary
+        x = flatten_image(x)
+        # add a dimension to tile the input and multiply by factors
         x = tf.cast(x[:, None, :], tf.float32)*self.factor*self.dt
         y = tf.tile(x, (1, self.N, 1))
         return y
+
+
+def flatten_image(x):
+    # flatten input if necessary
+    if len(x.shape) == 3:
+        x = tf.reshape(x, [-1, x.shape[1] * x.shape[2]])
+    if len(x.shape) == 4:
+        x = tf.reshape(x, [-1, x.shape[1] * x.shape[2] * x.shape[3]])
+    return x
