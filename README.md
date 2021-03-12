@@ -12,7 +12,7 @@ For more details see [https://arxiv.org/abs/2004.13532][here].
 This example illustrates how the package can be used to train a spiking network to classify the 
 MNIST dataset.
 
-```{python}
+```python
 import tensorflow.keras as keras
 from tf_spiking import DenseLIF, DenseLIFNoSpike, IntensityToPoissonSpiking
 
